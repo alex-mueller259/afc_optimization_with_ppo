@@ -1,0 +1,8 @@
+t_off	t_p	vol_flow	gamma_global	gamma_local[0]	gamma_local[1]	gamma_local[2]	gamma_local[3]	gamma_local[4]	gamma_local[5]	gamma_local[6]	gamma_local[7]
+0	0		0.23568969072164947	0.6218	0.477	0.2328	0.2172	0.1562	0.1666	0.1462	0.2368
+t_off	t_p	vol_flow	gamma_global	gamma_local[0]	gamma_local[1]	gamma_local[2]	gamma_local[3]	gamma_local[4]	gamma_local[5]	gamma_local[6]	gamma_local[7]
+0	0		0.24778144329896903	0.5996	0.4836	0.253	0.2214	0.1668	0.1742	0.1564	0.2836
+t_off	t_p	vol_flow	gamma_global	gamma_local[0]	gamma_local[1]	gamma_local[2]	gamma_local[3]	gamma_local[4]	gamma_local[5]	gamma_local[6]	gamma_local[7]
+0	0		0.2151340206185567	0.5442	0.407	0.2146	0.2184	0.1532	0.1478	0.1294	0.2394
+t_off	t_p	vol_flow	gamma_global	gamma_local[0]	gamma_local[1]	gamma_local[2]	gamma_local[3]	gamma_local[4]	gamma_local[5]	gamma_local[6]	gamma_local[7]
+0	0		0.23364432989690714	0.5296	0.3988	0.2698	0.2628	0.1672	0.1516	0.154	0.2554
