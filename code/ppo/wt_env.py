@@ -39,14 +39,16 @@ class WtEnv:
     def get_obs_reward(self, t_p, t_off):
         # Select which function to use to get Gamma
         if self.with_experiment:
-            gamma_global, gamma_local = functions.measurement_workflow(t_p, t_off, self.static_vol_flow)
+            # Divide t_p and t_off by 1000 to revert the unit from ms back to s
+            gamma_global, gamma_local, terminated, _, _ = functions.measurement_workflow(t_p/1000, t_off/1000, self.static_vol_flow)
         else:
             gamma_global, gamma_local = interp_measurement_data(t_p, t_off)
+            terminated = False
 
         observation = gamma_local
         reward = gamma_global
 
-        return observation, reward
+        return observation, reward, terminated
 
     def reset(self):
         self.actions_total = []
@@ -60,7 +62,7 @@ class WtEnv:
             self.t_off_init = np.random.uniform(low=(self.t_off_lower + 3.5*self.std), high=(self.t_off_upper - 3.5*self.std))
 
         # Get observation and info
-        observation, gamma_global = self.get_obs_reward(self.t_p_init, self.t_off_init)
+        observation, gamma_global, _ = self.get_obs_reward(self.t_p_init, self.t_off_init)
 
         self.actions_total.append([self.t_p_init, self.t_off_init])
         self.rewards_total.append(gamma_global)
@@ -72,9 +74,9 @@ class WtEnv:
         action_total_old = self.actions_total[-1]
 
         # Derive total values of t_p and t_off
-        action_total = [(action_total_old[0] + action.cpu().numpy()[0]),
-                        (action_total_old[1] + action.cpu().numpy()[1])]
-        print(f'dt_p = {action.cpu().numpy()[0]:.2f}ms   |   dt_off = {action.cpu().numpy()[1]:.2f}ms')
+        action_total = [(action_total_old[0] + action.cpu().detach().numpy()[0]),
+                        (action_total_old[1] + action.cpu().detach().numpy()[1])]
+        print(f'dt_p = {action.cpu().detach().numpy()[0]:.2f}ms   |   dt_off = {action.cpu().detach().numpy()[1]:.2f}ms')
         print(f't_p = {action_total[0]:.2f}ms   |   t_off = {action_total[1]:.2f}ms')
 
         # Check if t_p and t_off are within the given boundaries
@@ -86,8 +88,8 @@ class WtEnv:
             terminated = True
         else:
             # Get observation and total reward (gamma_global)
-            observation, gamma_global = self.get_obs_reward(action_total[0], action_total[1])
-            terminated = False
+            observation, gamma_global, terminated = self.get_obs_reward(action_total[0], action_total[1])
+            # terminated = False
 
         delta_gamma = gamma_global - self.rewards_total[-1]
         self.sum_of_gamma += gamma_global
@@ -100,7 +102,7 @@ class WtEnv:
         elif reward_type == 'gamma_global':
             reward = gamma_global
 
-        print(f'Gamma = {gamma_global:.5f}   |   reward = {reward:.5f}')
+        print(f'\nGamma = {gamma_global:.5f}   |   reward = {reward:.5f}')
 
         # Store new values
         self.actions_total.append(action_total)
@@ -113,7 +115,7 @@ class WtEnv:
 
 def interp_measurement_data(t_p, t_off):
     # Load data
-    save_dir = r'C:\Users\alex-\Documents\03-Uni\00_MASTERARBEIT\RL_TSB\ema2-2024\data\files'
+    save_dir = os.path.abspath(os.path.join(os.getcwd(), '..', '..', 'data', 'files'))
     file_path_coarse = 'const_vol-flow_1-27ms_in2ms.txt'
     file_path_fine = 'const_vol-flow_2-20ms_in1ms.txt'
 
