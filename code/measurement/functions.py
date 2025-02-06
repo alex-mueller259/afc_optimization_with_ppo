@@ -66,6 +66,11 @@ def vol_flow_cal(volt):
 def afc_control():
     print('AFC Control Start')
 
+    terminated = False
+
+    time_limit = 300  # 5 Min
+    start_time = time.time()
+
     # Initial p_control
     p_control = init.Signal_Out.signal_const_value
 
@@ -148,7 +153,14 @@ def afc_control():
         # Calculate the delta (in %) between the current and target volume flow
         d_v_percent = 1 - (v_dot_ist / init.target_vol_flow)
 
+        # Check how much time has passed
+        if time.time() - start_time > time_limit:
+            terminated = True
+            break
+
     print('\nAFC Control Finished')
+
+    return terminated
 
 
 # Function to calculate both the local and global forward flow fraction
@@ -190,10 +202,13 @@ def measurement_workflow(t_p, t_off, static_vol_flow):
 
     # Set the target volume flow if selected
     # Otherwise the initial p_control will be kept and the volume flow will change depending on t_p and t_off
+
+    terminated = False
+
     if static_vol_flow:
         # AFC controller (only do that if the AFC is actually on, so t_p != 0)
         if t_p != 0:
-            afc_control()  # Comment out this line to disable the AFC controller !!!
+            terminated = afc_control()  # Comment out this line to disable the AFC controller !!!
     else:
         # Wait
         time.sleep(10)
@@ -215,7 +230,7 @@ def measurement_workflow(t_p, t_off, static_vol_flow):
     print('\rCalculate Gamma', end='')
     gamma_global, gamma_local = calc_gamma(data_off)
 
-    return gamma_global, gamma_local, v_dot_ist, init.Signal_Out.signal_const_value
+    return gamma_global, gamma_local, terminated, v_dot_ist, init.Signal_Out.signal_const_value
 
 
 def measurement_stop():
