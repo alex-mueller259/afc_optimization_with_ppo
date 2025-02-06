@@ -132,6 +132,9 @@ class PPOAgent:
                 loss.backward()
                 self.model.optimizer.step()
 
+                # Save current model
+                self.model.save_checkpoint()
+
         return loss, actor_loss, critic_loss*self.c1, entropy*(-self.c2)
 
     def learning(self, num_episodes, num_timesteps):
@@ -173,7 +176,7 @@ class PPOAgent:
 
                 # Save variables to file
                 write_list = [i, j, action.cpu().numpy()[0], action.cpu().numpy()[1]] + self.env.write_list \
-                             + [value.cpu().detach().numpy()[0], dist.loc.cpu().detach().numpy()]
+                              + [next_state, value.cpu().detach().numpy()[0], dist.loc.cpu().detach().numpy()]
                 write_file(self.file_path_timestep, write_list)
 
                 state = next_state
