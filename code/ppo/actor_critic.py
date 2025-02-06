@@ -5,12 +5,14 @@ import torch.optim as optim
 
 
 class ActorCritic(nn.Module):
-    def __init__(self, num_inputs, num_outputs, hidden_size, learning_rate, save_file, std=0.0001, output_scale=1):
+    def __init__(self, num_inputs, num_outputs, hidden_size, learning_rate, save_file, std=0.0001, output_scale=1,
+                 deterministic=False):
         super(ActorCritic, self).__init__()
         # Initialize variables
         self.std = std
         self.output_scale = output_scale
         self.save_file = save_file
+        self.deterministic = deterministic
 
         # Define Actor Network
         self.actor = nn.Sequential(
@@ -42,8 +44,12 @@ class ActorCritic(nn.Module):
         value = self.critic(x)
 
         mu = self.actor(x) * self.output_scale
-        std = torch.FloatTensor([self.std, self.std]).to(self.device)
-        dist = Normal(mu, std)
+
+        if not self.deterministic:
+            std = torch.FloatTensor([self.std, self.std]).to(self.device)
+            dist = Normal(mu, std)
+        else:
+            dist = mu
 
         return dist, value
 
