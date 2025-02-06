@@ -4,7 +4,9 @@ import glob
 import numpy as np
 import os
 
-from ppo import PPOAgent
+import measurement.functions
+import ppo
+import ppo_deterministic
 from measurement import init
 from measurement import functions
 
@@ -35,13 +37,15 @@ if __name__ == '__main__':
     """Define file paths"""
 
     date_time = datetime.now().strftime('%Y-%m-%d_%H%M')
-    save_dir = r'C:\Users\alex-\Documents\03-Uni\00_MASTERARBEIT\RL_TSB\save_dir\random_init'
+    save_dir = r'C:\Users\alex-\Documents\03-Uni\00_MASTERARBEIT\RL_TSB\save_dir\d_mode'
     file_path_timestep = os.path.join(save_dir, ('timestep_data_' + date_time + '.txt'))
     file_path_episode = os.path.join(save_dir, ('episode_data_' + date_time + '.txt'))
 
     file_paths = [file_path_timestep, file_path_episode]
 
     """Neural Network settings"""
+
+    deterministic = False  # Turn on deterministic mode
 
     # Hyper params
     num_inputs = 8  # Size of input layers
@@ -54,12 +58,12 @@ if __name__ == '__main__':
 
     nn_save_file = os.path.join(save_dir, 'model_' + date_time + '.pth')  # File path for model saving
 
-    nn_input = [num_inputs, num_outputs, hidden_size, lr, nn_save_file, std, output_scale]
+    nn_input = [num_inputs, num_outputs, hidden_size, lr, nn_save_file, std, output_scale, deterministic]
 
     """Environmental settings"""
 
     with_experiment = False  # Select how to get Gamma (with or without live experiment)
-    static_vol_flow = False  # Select if the data is obtained with static volume flow (True) or static pressure (False)
+    static_vol_flow = True  # Select if the data is obtained with static volume flow (True) or static pressure (False)
     random_init = False  # Whether to select the initial t_p and t_off values randomly or use given values
 
     # Boundaries of the t_p / t_off values
@@ -78,7 +82,7 @@ if __name__ == '__main__':
     """Agent settings"""
 
     # Set up iteration params
-    num_episodes = 1000
+    num_episodes = 100
     num_timesteps = 15
 
     # For reward calculation
@@ -105,7 +109,10 @@ if __name__ == '__main__':
     gae_input = [gamma, tau]
 
     # Initialize PPO agent
-    agent = PPOAgent(file_paths, nn_input, env_input, reward_input, gae_input, agent_input)
+    if not deterministic:
+        agent = ppo.PPOAgent(file_paths, nn_input, env_input, reward_input, gae_input, agent_input)
+    else:
+        agent = ppo_deterministic.PPOAgent(file_paths, nn_input, env_input, reward_input, gae_input, agent_input)
 
     # Model reload
     model_reload = input('Do you want to reload the model? (y/n):')
@@ -131,7 +138,7 @@ if __name__ == '__main__':
     info_list = [timestep_reward_type, str(timestep_factor), episode_reward_type, str(episode_factor), info_init,
                  str(std), str(num_episodes), str(num_timesteps), info_reload]
     timestep_list = ['episode', 'timestep', 'dt_p', 'dt_off', 't_p', 't_off', 'reward', 'gamma_global', 'delta_gamma',
-                     'sum_of_gamma', 'sum_of_gamma_norm', 'critic_value', 'mu']
+                     'sum_of_gamma', 'sum_of_gamma_norm', 'gamma_local', 'critic_value', 'mu']
     episode_list = ['episode', 'episode_reward', 'reward_last_timestep', 'gamma_global_last_timestep', 'loss',
                     'actor_loss', 'critic_loss', 'entropy']
 
@@ -158,4 +165,7 @@ if __name__ == '__main__':
 
     print('Start learning...')
     agent.learning(num_episodes, num_timesteps)
+
+    if with_experiment:
+        measurement.functions.measurement_stop()
 
